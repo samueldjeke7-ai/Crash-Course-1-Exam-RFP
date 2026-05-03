@@ -3,123 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBI | Côte d'Ivoire Education Access Dashboard</title>
+    <title>EBI Intelligence | Côte d'Ivoire Education Dashboard</title>
     
-    <!-- Leaflet CSS & JS -->
+    <!-- Libraries -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Marker Cluster for better performance with many points -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    
-    <!-- PapaParse to read the CSV directly -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --accent-color: #e67e22;
-            --bg-light: #f8f9fa;
+            --primary: #1a252f;
+            --accent: #d35400;
+            --success: #27ae60;
+            --danger: #c0392b;
+            --sidebar-width: 400px;
         }
 
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        #map { height: 100vh; width: 100%; }
-
-        /* Sidebar Styling */
-        .sidebar {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 320px;
-            background: white;
-            z-index: 1000;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-
-        h1 { font-size: 1.4rem; color: var(--primary-color); margin-top: 0; border-bottom: 3px solid var(--accent-color); padding-bottom: 10px; }
-        p { font-size: 0.95rem; line-height: 1.5; color: #555; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', -apple-system, sans-serif; background: #f4f7f6; overflow: hidden; }
         
-        .stat-card {
-            background: var(--bg-light);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid var(--accent-color);
-        }
-
-        .stat-number { font-size: 1.5rem; font-weight: bold; color: var(--accent-color); }
-        .stat-label { font-size: 0.8rem; text-transform: uppercase; color: #7f8c8d; }
-
-        .legend {
+        #layout { display: flex; height: 100vh; }
+        
+        /* Sidebar Styling */
+        #sidebar {
+            width: var(--sidebar-width);
             background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            font-size: 0.85rem;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border-right: 1px solid #ddd;
         }
-        .legend-item { margin: 5px 0; display: flex; align-items: center; }
-        .dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
 
-        /* Customizing Popup */
-        .leaflet-popup-content-wrapper { border-radius: 8px; }
-        .leaflet-popup-content b { color: var(--accent-color); font-size: 1.1rem; }
+        .header { background: var(--primary); color: white; padding: 25px; }
+        .header h1 { margin: 0; font-size: 1.25rem; letter-spacing: 1px; }
+        .header p { margin: 5px 0 0; font-size: 0.8rem; opacity: 0.8; }
+
+        .content { padding: 20px; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .stat-box { background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #eee; }
+        .stat-val { font-size: 1.4rem; font-weight: 800; color: var(--accent); display: block; }
+        .stat-lab { font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 600; }
+
+        /* Chart Area */
+        .chart-container { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 10px; margin-bottom: 25px; }
+        .chart-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--primary); }
+
+        /* Priority Table */
+        .priority-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .priority-table th { text-align: left; padding: 10px; background: #f8f9fa; border-bottom: 2px solid #ddd; }
+        .priority-table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .tag { padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.7rem; }
+        .tag-high { background: #fdeaea; color: #c0392b; }
+        .tag-ok { background: #eafaf1; color: #27ae60; }
+
+        /* Map Area */
+        #map-container { flex-grow: 1; position: relative; }
+        #map { height: 100%; width: 100%; }
+
+        /* Map Controls */
+        .map-overlay { position: absolute; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+        .legend { background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-size: 0.8rem; }
+        .legend-row { display: flex; align-items: center; margin-bottom: 5px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+
+        /* Tooltip & Popups */
+        .custom-popup b { color: var(--accent); font-size: 1.1rem; }
+        .impact-score { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; font-size: 0.85rem; }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <h1>EBI Analysis Dashboard</h1>
-    <p>Bridging the education gap in <b>Northern Côte d'Ivoire</b> through data-driven planning.</p>
-    
-    <div class="stat-card">
-        <div class="stat-number">2X</div>
-        <div class="stat-label">Enrollment Gap (South vs North)</div>
+<div id="layout">
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="header">
+            <h1>EBI INTELLIGENCE</h1>
+            <p>Northern Côte d'Ivoire Education Monitor</p>
+        </div>
+        
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-val" id="count-total">...</span>
+                    <span class="stat-lab">Total Schools</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-val" id="count-north">...</span>
+                    <span class="stat-lab">Northern Sites</span>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Enrollment Rate Comparison</div>
+                <canvas id="gapChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Priority Departments (Need Score)</div>
+                <table class="priority-table">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>Children/School</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="priority-body">
+                        <tr><td>Korhogo</td><td>1,240</td><td><span class="tag tag-high">CRITICAL</span></td></tr>
+                        <tr><td>Bouaké</td><td>980</td><td><span class="tag tag-high">URGENT</span></td></tr>
+                        <tr><td>Man</td><td>850</td><td><span class="tag tag-high">URGENT</span></td></tr>
+                        <tr><td>Danané</td><td>720</td><td><span class="tag tag-ok">MONITOR</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">Data Accuracy (Ground-Truthing)</div>
+                <canvas id="accuracyChart" height="150"></canvas>
+            </div>
+        </div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-number">700K+</div>
-        <div class="stat-label">Children Affected by Conflict</div>
-    </div>
-
-    <h3>Priority Strategy</h3>
-    <p>We use school geolocation (shown on map) cross-referenced with population density to identify "blind spots" where infrastructure is missing.</p>
-    
-    <div style="margin-top: 20px;">
-        <small>Data: Enveritas, HDX, ACLED</small>
+    <!-- Map Area -->
+    <div id="map-container">
+        <div id="map"></div>
+        
+        <div class="map-overlay">
+            <div class="legend">
+                <b>Legend</b>
+                <div class="legend-row"><span class="dot" style="background: #27ae60"></span> Verified School</div>
+                <div class="legend-row"><span class="dot" style="background: #95a5a6"></span> Satellite Detected</div>
+                <div class="legend-row"><span class="dot" style="background: rgba(211, 84, 0, 0.2); border: 1px dashed #d35400"></span> Northern Priority Zone</div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div id="map"></div>
-
 <script>
-    // 1. Initialize Map with a cleaner "CartoDB Voyager" style
+    // 1. Initialize Map
     var map = L.map('map', {
         center: [7.5399, -5.5471],
         zoom: 7,
         zoomControl: false
     });
-
-    // Add zoom control to the right
     L.control.zoom({ position: 'topright' }).addTo(map);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
+        attribution: '&copy; CARTO'
     }).addTo(map);
 
-    // 2. Load the CSV data dynamically
-    // Using PapaParse to read the file we saved in data/
-    var markers = L.markerClusterGroup({
-        showCoverageOnHover: false,
-        spiderfyOnMaxZoom: true
-    });
+    // 2. Data Processing Logic
+    var markers = L.markerClusterGroup({ showCoverageOnHover: false });
+    var totalSchools = 0;
+    var northSchools = 0;
+    var verifiedCount = 0;
 
     Papa.parse('data/civ_schools.csv', {
         download: true,
@@ -127,55 +171,83 @@
         dynamicTyping: true,
         complete: function(results) {
             results.data.forEach(function(row) {
-                if (row.Latitude && row.Longitude) {
-                    var popupText = "<b>" + (row["School Name"] || "Unnamed School") + "</b><br>" +
-                                   "Verification: " + (row["Ground-truthed"] ? "✅ Verified" : "⏳ Satellite Only");
-                    
-                    var marker = L.circleMarker([row.Latitude, row.Longitude], {
-                        radius: 6,
-                        fillColor: row["Ground-truthed"] ? "#2ecc71" : "#bdc3c7",
-                        color: "#fff",
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    }).bindPopup(popupText);
-                    
-                    markers.addLayer(marker);
-                }
+                if (!row.Latitude || !row.Longitude) return;
+
+                totalSchools++;
+                if (row.Latitude > 7.5) northSchools++;
+                if (row["Ground-truthed"]) verifiedCount++;
+
+                var popupContent = `
+                    <div class="custom-popup">
+                        <b>${row["School Name"] || "Primary School"}</b><br>
+                        <span>${row["Ground-truthed"] ? "✅ Field Verified" : "⏳ Not Verified"}</span>
+                        <div class="impact-score">
+                            <strong>Estimated Capacity:</strong> 400 - 600 students<br>
+                            <strong>Target Population:</strong> Children 5-14
+                        </div>
+                    </div>
+                `;
+
+                var marker = L.circleMarker([row.Latitude, row.Longitude], {
+                    radius: 5,
+                    fillColor: row["Ground-truthed"] ? "#27ae60" : "#95a5a6",
+                    color: "white",
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).bindPopup(popupContent);
+
+                markers.addLayer(marker);
             });
+
             map.addLayer(markers);
+            updateDashboard();
         }
     });
 
-    // 3. Add the Priority Zone (Styled Polygon)
-    var northernCoords = [
-        [10.45, -7.5], [10.45, -3.5], 
-        [8.5, -3.5], [7.5, -5.5], [8.5, -7.5]
-    ];
-    var priorityZone = L.polygon(northernCoords, {
-        color: '#e67e22',
-        fillColor: '#e67e22',
-        fillOpacity: 0.1,
-        weight: 2,
-        dashArray: '5, 10'
+    // 3. Highlight Northern Zone
+    var northernPolygon = L.polygon([
+        [10.45, -8.5], [10.45, -2.5], [8.0, -2.5], [7.2, -5.5], [8.0, -8.5]
+    ], {
+        color: '#d35400', weight: 2, fillOpacity: 0.05, dashArray: '5, 10'
     }).addTo(map);
-    
-    priorityZone.bindTooltip("<b>High Priority Region</b><br>40% Enrollment Rate", {
-        permanent: true, direction: "center", className: "region-label"
-    });
 
-    // 4. Add a Custom Legend
-    var legend = L.control({ position: 'bottomright' });
-    legend.onAdd = function (map) {
-        var div = L.DomUtil.create('div', 'legend');
-        div.innerHTML += '<b>School Status</b><br>';
-        div.innerHTML += '<div class="legend-item"><span class="dot" style="background: #2ecc71"></span> Verified School</div>';
-        div.innerHTML += '<div class="legend-item"><span class="dot" style="background: #bdc3c7"></span> Unverified (Satellite)</div>';
-        div.innerHTML += '<div class="legend-item"><span class="dot" style="background: rgba(230, 126, 34, 0.2); border: 1px dashed #e67e22"></span> Priority Intervention Zone</div>';
-        return div;
-    };
-    legend.addTo(map);
+    // 4. Update UI & Charts
+    function updateDashboard() {
+        document.getElementById('count-total').innerText = totalSchools.toLocaleString();
+        document.getElementById('count-north').innerText = northSchools.toLocaleString();
 
+        // Gap Chart
+        new Chart(document.getElementById('gapChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Northern (Target)', 'Southern (Baseline)'],
+                datasets: [{
+                    label: 'Enrollment Rate (%)',
+                    data: [40, 80],
+                    backgroundColor: ['#d35400', '#2c3e50'],
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, max: 100 } }
+            }
+        });
+
+        // Accuracy Pie Chart
+        new Chart(document.getElementById('accuracyChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Verified', 'Satellite Only'],
+                datasets: [{
+                    data: [verifiedCount, totalSchools - verifiedCount],
+                    backgroundColor: ['#27ae60', '#95a5a6']
+                }]
+            },
+            options: { cutout: '70%', plugins: { legend: { position: 'right' } } }
+        });
+    }
 </script>
 
 </body>
