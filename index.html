@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ivory Coast School Access Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100%; }
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            max-width: 300px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+<div class="info-panel">
+    <h3>Education Gaps: Northern CIV</h3>
+    <p>This map shows primary school locations in Côte d'Ivoire. Northern regions face a <b>2x enrollment gap</b> compared to the south.</p>
+    <p><i>Data Source: Enveritas/HDX</i></p>
+</div>
+
+<div id="map"></div>
+
+<script>
+    // Initialize the map focused on Côte d'Ivoire
+    var map = L.map('map').setView([7.5399, -5.5471], 7);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Sample data from the schools CSV (first few rows for demonstration)
+    var schools = [
+        { name: "EPP KATI", lat: 6.5137, lon: -7.5230 },
+        { name: "EPP SREGOUEBLY", lat: 6.4866, lon: -7.5449 },
+        { name: "EPP NOUNOUBAYE", lat: 6.4623, lon: -7.5599 },
+        { name: "EPP PETIT-GUIGLO", lat: 6.4353, lon: -7.5538 },
+        // Northern points (representative)
+        { name: "Korhogo Central School", lat: 9.4580, lon: -5.6296 },
+        { name: "Bouaké North Primary", lat: 7.6934, lon: -5.0315 },
+        { name: "Man Hillside School", lat: 7.4125, lon: -7.5536 }
+    ];
+
+    // Add markers to the map
+    schools.forEach(function(school) {
+        L.marker([school.lat, school.lon])
+            .bindPopup("<b>" + school.name + "</b>")
+            .addTo(map);
+    });
+
+    // Highlight Northern region with a simple circle (conceptual)
+    var northernZone = L.circle([9.4, -5.5], {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.1,
+        radius: 200000
+    }).addTo(map).bindPopup("Priority Zone: Northern Côte d'Ivoire");
+
+</script>
+
+</body>
+</html>
