@@ -1,73 +1,180 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Ivory Coast School Access Map</title>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EBI | Côte d'Ivoire Education Access Dashboard</title>
+    
+    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Marker Cluster for better performance with many points -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    
+    <!-- PapaParse to read the CSV directly -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
     <style>
-        body { margin: 0; padding: 0; }
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e67e22;
+            --bg-light: #f8f9fa;
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         #map { height: 100vh; width: 100%; }
-        .info-panel {
+
+        /* Sidebar Styling */
+        .sidebar {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
+            top: 20px;
+            left: 20px;
+            width: 320px;
             background: white;
+            z-index: 1000;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        h1 { font-size: 1.4rem; color: var(--primary-color); margin-top: 0; border-bottom: 3px solid var(--accent-color); padding-bottom: 10px; }
+        p { font-size: 0.95rem; line-height: 1.5; color: #555; }
+        
+        .stat-card {
+            background: var(--bg-light);
             padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            max-width: 300px;
-            font-family: Arial, sans-serif;
+            margin: 15px 0;
+            border-left: 4px solid var(--accent-color);
         }
+
+        .stat-number { font-size: 1.5rem; font-weight: bold; color: var(--accent-color); }
+        .stat-label { font-size: 0.8rem; text-transform: uppercase; color: #7f8c8d; }
+
+        .legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            font-size: 0.85rem;
+        }
+        .legend-item { margin: 5px 0; display: flex; align-items: center; }
+        .dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+
+        /* Customizing Popup */
+        .leaflet-popup-content-wrapper { border-radius: 8px; }
+        .leaflet-popup-content b { color: var(--accent-color); font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
-<div class="info-panel">
-    <h3>Education Gaps: Northern CIV</h3>
-    <p>This map shows primary school locations in Côte d'Ivoire. Northern regions face a <b>2x enrollment gap</b> compared to the south.</p>
-    <p><i>Data Source: Enveritas/HDX</i></p>
+<div class="sidebar">
+    <h1>EBI Analysis Dashboard</h1>
+    <p>Bridging the education gap in <b>Northern Côte d'Ivoire</b> through data-driven planning.</p>
+    
+    <div class="stat-card">
+        <div class="stat-number">2X</div>
+        <div class="stat-label">Enrollment Gap (South vs North)</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number">700K+</div>
+        <div class="stat-label">Children Affected by Conflict</div>
+    </div>
+
+    <h3>Priority Strategy</h3>
+    <p>We use school geolocation (shown on map) cross-referenced with population density to identify "blind spots" where infrastructure is missing.</p>
+    
+    <div style="margin-top: 20px;">
+        <small>Data: Enveritas, HDX, ACLED</small>
+    </div>
 </div>
 
 <div id="map"></div>
 
 <script>
-    // Initialize the map focused on Côte d'Ivoire
-    var map = L.map('map').setView([7.5399, -5.5471], 7);
-
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // Sample data from the schools CSV (first few rows for demonstration)
-    var schools = [
-        { name: "EPP KATI", lat: 6.5137, lon: -7.5230 },
-        { name: "EPP SREGOUEBLY", lat: 6.4866, lon: -7.5449 },
-        { name: "EPP NOUNOUBAYE", lat: 6.4623, lon: -7.5599 },
-        { name: "EPP PETIT-GUIGLO", lat: 6.4353, lon: -7.5538 },
-        // Northern points (representative)
-        { name: "Korhogo Central School", lat: 9.4580, lon: -5.6296 },
-        { name: "Bouaké North Primary", lat: 7.6934, lon: -5.0315 },
-        { name: "Man Hillside School", lat: 7.4125, lon: -7.5536 }
-    ];
-
-    // Add markers to the map
-    schools.forEach(function(school) {
-        L.marker([school.lat, school.lon])
-            .bindPopup("<b>" + school.name + "</b>")
-            .addTo(map);
+    // 1. Initialize Map with a cleaner "CartoDB Voyager" style
+    var map = L.map('map', {
+        center: [7.5399, -5.5471],
+        zoom: 7,
+        zoomControl: false
     });
 
-    // Highlight Northern region with a simple circle (conceptual)
-    var northernZone = L.circle([9.4, -5.5], {
-        color: 'red',
-        fillColor: '#f03',
+    // Add zoom control to the right
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
+
+    // 2. Load the CSV data dynamically
+    // Using PapaParse to read the file we saved in data/
+    var markers = L.markerClusterGroup({
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: true
+    });
+
+    Papa.parse('data/civ_schools.csv', {
+        download: true,
+        header: true,
+        dynamicTyping: true,
+        complete: function(results) {
+            results.data.forEach(function(row) {
+                if (row.Latitude && row.Longitude) {
+                    var popupText = "<b>" + (row["School Name"] || "Unnamed School") + "</b><br>" +
+                                   "Verification: " + (row["Ground-truthed"] ? "✅ Verified" : "⏳ Satellite Only");
+                    
+                    var marker = L.circleMarker([row.Latitude, row.Longitude], {
+                        radius: 6,
+                        fillColor: row["Ground-truthed"] ? "#2ecc71" : "#bdc3c7",
+                        color: "#fff",
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).bindPopup(popupText);
+                    
+                    markers.addLayer(marker);
+                }
+            });
+            map.addLayer(markers);
+        }
+    });
+
+    // 3. Add the Priority Zone (Styled Polygon)
+    var northernCoords = [
+        [10.45, -7.5], [10.45, -3.5], 
+        [8.5, -3.5], [7.5, -5.5], [8.5, -7.5]
+    ];
+    var priorityZone = L.polygon(northernCoords, {
+        color: '#e67e22',
+        fillColor: '#e67e22',
         fillOpacity: 0.1,
-        radius: 200000
-    }).addTo(map).bindPopup("Priority Zone: Northern Côte d'Ivoire");
+        weight: 2,
+        dashArray: '5, 10'
+    }).addTo(map);
+    
+    priorityZone.bindTooltip("<b>High Priority Region</b><br>40% Enrollment Rate", {
+        permanent: true, direction: "center", className: "region-label"
+    });
+
+    // 4. Add a Custom Legend
+    var legend = L.control({ position: 'bottomright' });
+    legend.onAdd = function (map) {
+        var div = L.DomUtil.create('div', 'legend');
+        div.innerHTML += '<b>School Status</b><br>';
+        div.innerHTML += '<div class="legend-item"><span class="dot" style="background: #2ecc71"></span> Verified School</div>';
+        div.innerHTML += '<div class="legend-item"><span class="dot" style="background: #bdc3c7"></span> Unverified (Satellite)</div>';
+        div.innerHTML += '<div class="legend-item"><span class="dot" style="background: rgba(230, 126, 34, 0.2); border: 1px dashed #e67e22"></span> Priority Intervention Zone</div>';
+        return div;
+    };
+    legend.addTo(map);
 
 </script>
 
