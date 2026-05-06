@@ -75,11 +75,16 @@ def extract_education_gap_data(file_path, output_csv):
 
 ---
 
-## 5. Visual Artifact (Dashboard Screenshot Reference)
-The live dashboard features:
-- **Conflict Density Overlay**: Visualizing ACLED data markers.
-- **Risk Assessment Panel**: 60% teacher abandonment rate and 700k+ displacement stats.
-- **AI Insights Engine**: Predictive analysis for humanitarian priority zones.
+## 6. Visual Evidence: Interactive Dashboard
 
-**Visit the live site to interact with the map:**
-[https://samueldjeke7-ai.github.io/Crash-Course-1-Exam-RFP/](https://samueldjeke7-ai.github.io/Crash-Course-1-Exam-RFP/)
+*Note to Student: Before saving this document as a PDF, please take a screenshot of your live dashboard and insert it below.*
+
+**How to include your screenshot:**
+1. Open your dashboard: [https://samueldjeke7-ai.github.io/Crash-Course-1-Exam-RFP/](https://samueldjeke7-ai.github.io/Crash-Course-1-Exam-RFP/)
+2. Press `Win + Shift + S` (Windows) or `Cmd + Shift + 4` (Mac) to capture the screen.
+3. Paste the image directly below this line if using a Markdown editor, or insert it into your final PDF/Word document.
+
+> **[INSERT SCREENSHOT HERE]**
+
+---
+*Prepared as part of the ICT for Civic Data - Crash Course 2026.*
