@@ -1,22 +1,20 @@
-# EBI Intelligence Dashboard: Côte d'Ivoire Education Monitor
+# Strategy Proposal: Côte d'Ivoire Education Access — EBI RFP Response
 
-This repository contains a data-driven response to the **Education Bridge Initiative (EBI)** RFP, focusing on bridging the education gap in conflict-affected regions of Northern Côte d'Ivoire.
+This repository contains a data-driven proposal in response to the **Education Bridge Initiative (EBI)** RFP, *Strengthening Education Programming in Conflict-Affected Areas*. The strategy section is in [`Strategy_Proposal.md`](Strategy_Proposal.md); the dashboard below is a working demonstration of the methodology it describes, not the proposal itself.
 
-## 📊 Live Map & Dashboard
-You can view the interactive data visualization directly here:
+## 📊 Visual artifact
 👉 **[https://samueldjeke7-ai.github.io/Crash-Course-1-Exam-RFP/](https://samueldjeke7-ai.github.io/Crash-Course-1-Exam-RFP/)**
 
-## 📂 Project Structure
-The repository is organized as follows to ensure data integrity and ease of use:
+## 📂 Repository contents
 
-- **`index.html`**: The core interactive dashboard. It uses Leaflet.js, Chart.js, and PapaParse to visualize school locations and education gap analytics.
-- **`data/`**: Contains all foundational datasets and strategic documents.
-  - `civ_schools.csv`: The full database of primary schools in Côte d'Ivoire (sourced from HDX/Enveritas).
-  - `northern_education_gaps.csv`: Extracted data focusing specifically on the North-South enrollment disparity.
-  - `strategy_proposal.md`: A detailed strategy document connecting the data work to EBI's funding goals.
-  - `ebi-angle-statement.md one.md`: The original RFP response and data analysis plan.
+- **`Strategy_Proposal.md`**: The strategy section submitted for this RFP — context, objectives, approach, proposed activities, deliverables.
+- **`index.html`**: The demonstration dashboard. Uses Leaflet.js, Chart.js, and PapaParse to visualize school locations and education gap analytics for Côte d'Ivoire.
+- **`data/`**: Underlying datasets and background analysis.
+  - `civ_schools.csv`: Primary school database for Côte d'Ivoire (sourced from HDX/Enveritas).
+  - `northern_education_gaps.csv`: Extracted data on the North-South enrollment disparity.
+  - `ebi-angle-statement.md one.md`: Background research and angle statement behind the proposal, including sourced figures and data download links.
 - **`scripts/`**:
-  - `extract_data.py`: A Python script used to filter and process the raw markdown data into structured CSV format.
+  - `extract_data.py`: Script used to filter and process the raw markdown data into structured CSV format.
 
 ## 🛠️ Key Features
 - **Interactive Map**: High-resolution visualization of school clusters across Côte d'Ivoire.
