@@ -13,12 +13,14 @@ EBI already knows where its education programming is most needed: northern Côte
 ## 2. Objectives
 
 1. **Give EBI a defensible basis for prioritising where to act first.** Replace ad hoc, country-office-level intuition about which departments need schools most with a ranked, data-backed gap score.
-2. **Make conflict risk visible alongside education gaps.** Let EBI see, in one view, where the school-to-population mismatch and active conflict risk overlap — the sites where intervention is both most needed and most urgent.
-3. **Equip EBI to extend the same approach beyond Côte d'Ivoire.** Build the methodology on data sources (Enveritas, ACLED, WorldPop) that exist for all 12 of EBI's operating countries, so the same logic transfers without new data infrastructure.
+2. **Make cross-border displacement pressure visible alongside the education gap.** Let EBI see, in one view, where the school-to-population mismatch and proximity to an active displacement corridor overlap — the sites where intervention is both most needed and most urgent.
+3. **Equip EBI to extend the same approach beyond Côte d'Ivoire.** Build the methodology on data sources (school geolocation, subnational population, displacement/refugee statistics) that exist in comparable form for other EBI operating countries, so the same logic transfers without new data infrastructure.
 
 ## 3. Approach
 
-Education access is a spatial problem, and EBI's own data already contains the answer if the right layers are combined. We propose cross-referencing three open datasets per department: Enveritas school geolocation, WorldPop school-age population, and ACLED conflict events. Overlaying these produces a "children per school" ratio and a conflict-exposure flag for every department — concretely, a map showing that a department with few schools, a high child population, and recent conflict events nearby is a department EBI should prioritise over one with the same school shortage but no active conflict risk. AI is used to make this workflow fast rather than novel: automated spatial joins between school and conflict locations, a scoring step that ranks departments by gap size, and a lightweight dashboard that recalculates as new conflict data is published — so the picture stays current without manual re-analysis each time.
+Education access is a spatial problem, and the answer is already contained in open data if the right layers are combined and the gaps in that data are handled honestly. For every department in Côte d'Ivoire, we cross-reference real school geolocation data (Enveritas, 18,119 points) against real subnational population statistics (UNFPA, via HDX) to compute a children-per-school ratio, and combine it with each department's proximity to the Mali / Burkina Faso border — the documented source of the region's current displacement pressure (226,272 Burkinabé and 6,969 Malian refugees were hosted in Côte d'Ivoire in 2025, UNHCR). The two indicators are normalised and combined into a single composite score, then classified into three priority tiers.
+
+Two decisions shaped this approach, and both are documented in full in `docs/data_decisions.md`: first, ACLED has no open, registration-free conflict layer for Côte d'Ivoire itself (only for neighbouring Burkina Faso and Mali), so real cross-border refugee data is used as the displacement indicator instead of fabricating conflict points. Second, the Abidjan district was excluded from the ranking after the data showed an implausible 717 children per mapped school there — a sign that the school geolocation dataset under-covers dense urban infrastructure, not a real access gap. AI is used to make this workflow fast and to catch issues like the Abidjan anomaly, not to replace the judgment calls above — those are reviewed and decided by us, and should be reviewed again with EBI field staff in Activity 1.
 
 ## 4. Proposed Activities
 
@@ -30,9 +32,9 @@ Education access is a spatial problem, and EBI's own data already contains the a
 
 | Deliverable | Description |
 | :--- | :--- |
-| Prioritisation scoring methodology | The cross-referencing logic (school location × child population × conflict events) that produces a ranked gap score per department, validated with EBI field staff. |
-| Interactive dashboard (Côte d'Ivoire demonstration) | A working map and analytics view — built with Leaflet and Chart.js — showing the methodology applied to northern Côte d'Ivoire, with marker clustering and color-coded risk levels distinguishing high- and low-priority departments. |
-| Underlying datasets | School geolocation, population, and conflict event data, cleaned and structured per department, included in the GitHub repository for inspection. |
+| Prioritisation scoring methodology | The cross-referencing logic (school location × school-age population × border-displacement proximity) that produces a ranked composite score per department, including the documented decisions behind it, ready to be validated with EBI field staff. |
+| Interactive dashboard (Côte d'Ivoire demonstration) | A choropleth of all 108 departments — built with Leaflet — color-coded by priority tier, with per-department popups showing the indicators behind each score. |
+| Underlying datasets | School geolocation (Enveritas), subnational population (UNFPA), and refugee/displacement statistics (UNHCR), cleaned, joined per department, and included in the GitHub repository for inspection, alongside the data-quality decisions made along the way. |
 | Configured pipeline for EBI's chosen country | The same scoring methodology re-run against the country agreed in Activity 2, ready for EBI's team to maintain independently. |
 
 ---

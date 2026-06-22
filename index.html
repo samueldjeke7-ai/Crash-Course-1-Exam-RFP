@@ -1,357 +1,94 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conflict & Education Risk Intelligence System | EBI</title>
-    
-    <!-- Libraries -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-        :root {
-            --primary-bg: #f1f5f9; /* Light Slate Gray for page background */
-            --sidebar-bg: #ffffff; /* White sidebar for clean contrast */
-            --header-bg: #1e293b;  /* Darker slate for header */
-            --accent: #d97706;     /* Warmer amber/orange */
-            --danger: #dc2626;     /* Clearer red */
-            --success: #059669;    /* Clearer green */
-            --text-main: #1e293b;  /* Dark slate for main text */
-            --text-muted: #64748b; /* Muted slate for secondary text */
-            --border: #e2e8f0;     /* Light gray border */
-            --sidebar-width: 420px;
-        }
-
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--primary-bg); color: var(--text-main); overflow: hidden; }
-        
-        #layout { display: flex; height: 100vh; }
-        
-        /* Sidebar Styling */
-        #sidebar {
-            width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            border-right: 1px solid var(--border);
-        }
-
-        .header { background: var(--header-bg); padding: 25px; border-bottom: 1px solid var(--border); color: white; }
-        .header h1 { margin: 0; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.5px; color: #fbbf24; }
-        .header p { margin: 5px 0 0; font-size: 0.75rem; color: #cbd5e1; text-transform: uppercase; }
-
-        .section { padding: 20px; border-bottom: 1px solid var(--border); }
-        .section-title { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
-
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-box { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
-        .stat-val { font-size: 1.2rem; font-weight: 700; color: var(--text-main); display: block; }
-        .stat-lab { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; }
-
-        /* Risk Cards */
-        .risk-card { background: #fef2f2; border: 1px solid #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
-        .risk-card.warning { background: #fffbeb; border: 1px solid #fef3c7; }
-        .risk-title { font-size: 0.8rem; font-weight: 700; margin-bottom: 5px; color: var(--danger); }
-        .risk-card.warning .risk-title { color: var(--accent); }
-        .risk-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; }
-
-        /* Data Points */
-        .data-list { list-style: none; padding: 0; margin: 0; font-size: 0.8rem; }
-        .data-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
-        .data-item:last-child { border-bottom: none; }
-        .data-label { color: var(--text-muted); }
-        .data-value { font-weight: 600; color: var(--accent); }
-
-        /* AI Insights Panel */
-        .ai-panel { background: #f8fafc; border: 2px solid #fbbf24; padding: 15px; border-radius: 8px; }
-        .ai-header { color: #b45309; font-size: 0.75rem; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; }
-        .ai-header::before { content: '◈'; margin-right: 8px; }
-        .ai-content { font-size: 0.75rem; font-style: italic; color: #475569; }
-
-        /* Chart Area */
-        .chart-container { height: 180px; margin-top: 10px; }
-
-        /* Map Area */
-        #map-container { flex-grow: 1; position: relative; }
-        #map { height: 100%; width: 100%; }
-
-        /* Map Controls Overlay */
-        .map-overlay { position: absolute; bottom: 30px; right: 30px; z-index: 1000; background: white; padding: 15px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 220px; }
-        .layer-toggle { display: flex; flex-direction: column; gap: 10px; }
-        .toggle-item { display: flex; align-items: center; gap: 10px; font-size: 0.75rem; cursor: pointer; color: var(--text-main); }
-        .toggle-item input { accent-color: var(--accent); }
-
-        .legend { margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px; }
-        .legend-row { display: flex; align-items: center; margin-bottom: 5px; font-size: 0.7rem; color: var(--text-muted); }
-        .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
-
-        /* Custom Popup */
-        .leaflet-popup-content-wrapper { background: white; color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; }
-        .popup-header { border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 8px; font-weight: 700; color: var(--accent); }
-        .popup-stat { font-size: 0.75rem; margin-bottom: 4px; }
-        .risk-tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: var(--danger); color: white; }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: white; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Where school access is most at risk, northern Côte d'Ivoire (demonstration case)</title>
+<meta name="description" content="A transferable open-data prioritisation method, demonstrated on Côte d'Ivoire. The map identifies departments where the gap between school-age population and mapped schools is widest, weighted by proximity to the Mali / Burkina Faso border." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
+<header class="brief-head">
+  <div class="brief-inner">
+    <p class="kicker">Demonstration case &middot; EBI RFP response</p>
+    <h1>Where school access is most at&nbsp;risk in northern&nbsp;C&ocirc;te d'Ivoire.</h1>
+    <p class="standfirst">Departments shown in <strong class="ink-red">red</strong> combine a severe gap between school-age population and mapped schools with proximity to the Mali / Burkina Faso border &mdash; the source of the region's current displacement pressure. <strong>These are the departments EBI should field validate first.</strong> Orange departments carry a partial gap; yellow are comparatively well served. The same method can be re-pointed to any EBI country where comparable open data exists.</p>
+    <p class="finding-line"><span id="kpi-high-num">36</span> <span class="finding-split-lbl">of 107 scored departments reach the highest priority class, including all 21 departments across the six regions bordering Mali and Burkina Faso.</span></p>
+  </div>
+</header>
 
-<div id="layout">
-    <div id="sidebar">
-        <div class="header">
-            <h1>RISK INTELLIGENCE SYSTEM</h1>
-            <p>Conflict & Education Analytics — Côte d'Ivoire</p>
-        </div>
-        
-        <!-- Conflict & Displacement Section -->
-        <div class="section">
-            <div class="section-title">Risk Indicators</div>
-            <div class="risk-card">
-                <div class="risk-title">Teacher Abandonment: 60%</div>
-                <div class="risk-desc">High vacancy rates in northern border regions due to legacy conflict and recurring instability.</div>
-            </div>
-            <div class="risk-card warning">
-                <div class="risk-title">700,000+ Children Displaced</div>
-                <div class="risk-desc">Current pressure from Burkina Faso/Mali border influx increasing school demand by 25%.</div>
-            </div>
-        </div>
+<main class="brief-main">
 
-        <!-- Regional Data Points -->
-        <div class="section">
-            <div class="section-title">Regional Analytics</div>
-            <ul class="data-list">
-                <li class="data-item">
-                    <span class="data-label">Korhogo Enrollment</span>
-                    <span class="data-value">&lt; 40%</span>
-                </li>
-                <li class="data-item">
-                    <span class="data-label">Bouaké Students (Pre-crisis)</span>
-                    <span class="data-value">177,965</span>
-                </li>
-                <li class="data-item">
-                    <span class="data-label">Man Schools (Pre-crisis)</span>
-                    <span class="data-value">913</span>
-                </li>
-                <li class="data-item">
-                    <span class="data-label">North-South Gap</span>
-                    <span class="data-value">2.0x Delta</span>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Enrollment Time-series -->
-        <div class="section">
-            <div class="section-title">Enrollment Gap (2002-2026)</div>
-            <div class="chart-container">
-                <canvas id="timeSeriesChart"></canvas>
-            </div>
-        </div>
-
-        <!-- AI Insights -->
-        <div class="section">
-            <div class="section-title">AI Integrated Insights</div>
-            <div class="ai-panel">
-                <div class="ai-header">PREDICTIVE ENGINE ACTIVE</div>
-                <div class="ai-content">
-                    "Automated cross-referencing indicates high correlation between ACLED conflict clusters and school abandonment in the Northern Belt. Recommended priority: Korhogo/Danané corridor."
-                </div>
-            </div>
-            <div class="stats-grid" style="margin-top: 15px;">
-                <div class="stat-box">
-                    <span class="stat-val" id="risk-score">8.4</span>
-                    <span class="stat-lab">Avg Risk Score</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-val" id="alert-count">12</span>
-                    <span class="stat-lab">Active Alerts</span>
-                </div>
-            </div>
-        </div>
+  <section class="map-wrap">
+    <div class="map-stage">
+      <div id="map" role="region" aria-label="Choropleth of department priority classes across Côte d'Ivoire"></div>
+      <div class="legend" id="legend"></div>
     </div>
+    <aside class="map-annotations" aria-label="Map annotations">
+      <article class="anno">
+        <p class="anno-eyebrow">Northern border belt</p>
+        <p class="anno-lead"><strong>21</strong> high priority departments across the six regions bordering Mali and Burkina Faso</p>
+        <p class="anno-list">Bagoue, Tchologo, Folon, Poro, Kabadougou, Bounkani &mdash; includes Korhogo, Odienn&eacute;, Bouna</p>
+      </article>
+      <article class="anno">
+        <p class="anno-eyebrow">Central corridor</p>
+        <p class="anno-lead"><strong>15</strong> high priority departments south of the border belt, driven by the population-to-school gap alone</p>
+        <p class="anno-list">Hambol, B&eacute;r&eacute;, Worodougou, Gu&eacute;mon, Gontougo, Tonkpi, Bafing, Haut-Sassandra</p>
+      </article>
+    </aside>
+    <p class="map-hint">Click any department on the map for the numbers driving its score. Abidjan is shown but excluded from the ranking &mdash; see the methodology note below.</p>
+  </section>
 
-    <!-- Map Area -->
-    <div id="map-container">
-        <div id="map"></div>
-        
-        <div class="map-overlay">
-            <div class="layer-toggle">
-                <label class="toggle-item">
-                    <input type="checkbox" id="toggle-schools" checked> Schools (Enveritas)
-                </label>
-                <label class="toggle-item">
-                    <input type="checkbox" id="toggle-conflict" checked> Conflict Events (ACLED)
-                </label>
-                <label class="toggle-item">
-                    <input type="checkbox" id="toggle-risk-zones" checked> Risk Zones
-                </label>
-            </div>
-            <div class="legend">
-                <div class="legend-row"><span class="dot" style="background: var(--danger)"></span> Conflict Event</div>
-                <div class="legend-row"><span class="dot" style="background: var(--accent)"></span> High-Risk School</div>
-                <div class="legend-row"><span class="dot" style="background: var(--success)"></span> Low-Risk School</div>
-                <div class="legend-row"><span class="dot" style="background: rgba(220, 38, 38, 0.2); border: 1px solid var(--danger); border-radius: 4px; width: 12px; height: 12px;"></span> Priority Area</div>
-            </div>
-        </div>
+  <aside class="field-note">
+    <p><span class="fn-label">A note on field knowledge.</span> The map is a starting point for conversation, not an answer. Where it disagrees with what EBI field teams know on the ground &mdash; a department with more functioning schools than the Enveritas dataset captures, or a displacement route the data doesn't show &mdash; the disagreement itself is the most useful finding. It points either to a data gap or to a ground condition the data cannot see. Both improve the method.</p>
+  </aside>
+
+  <section class="findings-strip" id="insights" aria-label="Scale of the problem">
+    <div class="finding-cell">
+      <p class="cell-eyebrow">Schools mapped</p>
+      <p class="cell-stat" id="cell-schools">,</p>
+      <p class="cell-lbl">Primary schools geolocated nationally <span class="cell-src">Enveritas, via HDX</span></p>
     </div>
-</div>
+    <div class="finding-cell">
+      <p class="cell-eyebrow">Cross-border displacement</p>
+      <p class="cell-stat" id="cell-refugees">,</p>
+      <p class="cell-lbl">Burkinab&eacute; and Malian refugees hosted in C&ocirc;te d'Ivoire <span class="cell-src">UNHCR, 2025</span></p>
+    </div>
+    <div class="finding-cell">
+      <p class="cell-eyebrow">Children covered</p>
+      <p class="cell-stat" id="cell-children">,</p>
+      <p class="cell-lbl">School-age children (5&ndash;14) in the 107 scored departments <span class="cell-src">UNFPA, via HDX</span></p>
+    </div>
+  </section>
 
-<script>
-    // 1. Initialize Map
-    var map = L.map('map', {
-        center: [7.8, -5.5],
-        zoom: 7,
-        zoomControl: false
-    });
-    L.control.zoom({ position: 'topright' }).addTo(map);
+  <section class="caption">
+    <h2 class="caption-h">How to read this map</h2>
+    <p>Each department is scored on two indicators: the ratio of school-age children to schools mapped by Enveritas, and the department's latitude, normalised nationally, as a proxy for proximity to the Mali / Burkina Faso border. The two indicators are combined into one number; the top third of scored departments are <span class="ink-tag tag-hi">red</span>, the middle third <span class="ink-tag tag-med">orange</span>, the bottom third <span class="ink-tag tag-lo">yellow</span>.</p>
+    <p class="method-note">Method: unweighted mean of two min-max normalised indicators per department, tercile classified across 107 of 108 departments. Abidjan is excluded because the Enveritas dataset does not reliably capture dense urban school infrastructure (717 children per mapped school there, vs. 23&ndash;500 in every other department). ACLED has no open Côte d'Ivoire layer, so cross-border refugee counts (UNHCR) stand in for a direct conflict overlay. See <a href="docs/data_decisions.md">docs/data_decisions.md</a> for the full reasoning behind both decisions.</p>
+  </section>
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CARTO'
-    }).addTo(map);
+  <section class="cta-band">
+    <div class="cta-text">
+      <p class="cta-eyebrow">Inspect the evidence</p>
+      <p class="cta-lead">Every figure on this page is reproducible from raw open data. The composite scores, source data, and data-quality decisions are public in the repository.</p>
+    </div>
+    <a class="cta-btn" href="https://github.com/samueldjeke7-ai/Crash-Course-1-Exam-RFP" target="_blank" rel="noopener">
+      View repository
+      <svg class="cta-arrow" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M3 8h8.4L8.7 5.3l1-1L13.7 8l-4 3.7-1-1L11.4 9H3z"/></svg>
+    </a>
+  </section>
 
-    // 2. Data Layers
-    var schoolMarkers = L.markerClusterGroup({ showCoverageOnHover: false });
-    var conflictMarkers = L.layerGroup();
-    var riskZones = L.layerGroup();
+  <footer class="brief-foot">
+    <p class="foot-sources"><strong>Sources:</strong> Enveritas primary school geolocation dataset (HDX); OCHA Côte d'Ivoire subnational administrative boundaries, cod-ab-civ (HDX); UNFPA subnational population statistics, cod-ps-civ (HDX); UNHCR refugee and asylum-seeker population data, via HDX HAPI.</p>
+    <p class="foot-disclaimer">Demonstration only. Côte d'Ivoire is the reference case used to develop the method. The implementation country will be agreed with the contracting authority. Field validation is required before any planning decision.</p>
+  </footer>
+</main>
 
-    // 3. Simulated ACLED Data
-    const simulatedConflict = [
-        { lat: 7.69, lng: -5.03, type: "Violence against civilians", location: "Bouaké", intensity: "High" },
-        { lat: 9.45, lng: -5.62, type: "Armed clash", location: "Korhogo", intensity: "Critical" },
-        { lat: 7.41, lng: -7.55, type: "Protest with violence", location: "Man", intensity: "Medium" },
-        { lat: 7.26, lng: -8.15, type: "Border skirmish", location: "Danané", intensity: "High" },
-        { lat: 9.5, lng: -7.5, type: "Non-state actor activity", location: "Odienné", intensity: "Medium" },
-        { lat: 10.2, lng: -5.8, type: "Cross-border incident", location: "Ferkessédougou", intensity: "High" }
-    ];
-
-    simulatedConflict.forEach(c => {
-        L.circleMarker([c.lat, c.lng], {
-            radius: 8,
-            fillColor: '#ef4444',
-            color: '#fff',
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 0.6
-        }).bindPopup(`
-            <div class="popup-header">CONFLICT EVENT</div>
-            <div class="popup-stat"><strong>Type:</strong> ${c.type}</div>
-            <div class="popup-stat"><strong>Location:</strong> ${c.location}</div>
-            <div class="popup-stat"><strong>Intensity:</strong> <span class="risk-tag">${c.intensity}</span></div>
-        `).addTo(conflictMarkers);
-    });
-
-    // 4. Priority Risk Zones
-    const zones = [
-        [[10.5, -8.5], [10.5, -3.0], [8.5, -3.0], [8.0, -8.5]], // Northern Border
-        [[8.5, -8.5], [8.5, -6.5], [7.0, -6.5], [7.0, -8.5]]  // Western Corridor
-    ];
-    zones.forEach(coords => {
-        L.polygon(coords, {
-            color: '#ef4444',
-            weight: 2,
-            fillOpacity: 0.1,
-            dashArray: '5, 10'
-        }).addTo(riskZones);
-    });
-
-    // 5. Load School Data
-    Papa.parse('data/civ_schools.csv', {
-        download: true,
-        header: true,
-        dynamicTyping: true,
-        complete: function(results) {
-            results.data.forEach(function(row) {
-                if (!row.Latitude || !row.Longitude) return;
-
-                const isNorth = row.Latitude > 7.5;
-                const riskLevel = isNorth ? "High" : "Low";
-                const color = isNorth ? '#f59e0b' : '#10b981';
-
-                var popupContent = `
-                    <div class="popup-header">${row["School Name"] || "Primary School"}</div>
-                    <div class="popup-stat"><strong>Status:</strong> ${row["Ground-truthed"] ? "✅ Verified" : "⏳ Unverified"}</div>
-                    <div class="popup-stat"><strong>Risk Level:</strong> <span class="risk-tag" style="background:${color}">${riskLevel}</span></div>
-                    <div class="popup-stat"><strong>Conflict Proximity:</strong> ${isNorth ? "< 25km" : "> 100km"}</div>
-                `;
-
-                var marker = L.circleMarker([row.Latitude, row.Longitude], {
-                    radius: 4,
-                    fillColor: color,
-                    color: "white",
-                    weight: 0.5,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                }).bindPopup(popupContent);
-
-                schoolMarkers.addLayer(marker);
-            });
-            map.addLayer(schoolMarkers);
-        }
-    });
-
-    // Initial addition
-    map.addLayer(conflictMarkers);
-    map.addLayer(riskZones);
-
-    // 6. Layer Toggles
-    document.getElementById('toggle-schools').addEventListener('change', e => {
-        if (e.target.checked) map.addLayer(schoolMarkers); else map.removeLayer(schoolMarkers);
-    });
-    document.getElementById('toggle-conflict').addEventListener('change', e => {
-        if (e.target.checked) map.addLayer(conflictMarkers); else map.removeLayer(conflictMarkers);
-    });
-    document.getElementById('toggle-risk-zones').addEventListener('change', e => {
-        if (e.target.checked) map.addLayer(riskZones); else map.removeLayer(riskZones);
-    });
-
-    // 7. Charts
-    const ctx = document.getElementById('timeSeriesChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['2002', '2006', '2011', '2016', '2021', '2026'],
-            datasets: [
-                {
-                    label: 'North Enrollment (%)',
-                    data: [35, 30, 25, 32, 38, 39],
-                    borderColor: '#f59e0b',
-                    tension: 0.4,
-                    fill: false
-                },
-                {
-                    label: 'South Enrollment (%)',
-                    data: [75, 72, 70, 75, 78, 80],
-                    borderColor: '#10b981',
-                    tension: 0.4,
-                    fill: false
-                }
-            ]
-        },
-        options: {
-            maintainAspectRatio: false,
-            plugins: { 
-                legend: { 
-                    display: true, 
-                    labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } 
-                } 
-            },
-            scales: {
-                y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', font: { size: 10 } }, beginAtZero: true, max: 100 },
-                x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
-            }
-        }
-    });
-</script>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/map.js" defer></script>
 </body>
 </html>
